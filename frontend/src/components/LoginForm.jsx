@@ -1,20 +1,21 @@
-import { useState } from 'react'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 function LoginForm({ userType }) {
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const email = event.target.email.value;
-    const password = event.target.password.value;
 
     try {
-      const url = userType === 'candidate' 
-      ? `${import.meta.env.VITE_BASE_URL}/api/v1/candidate/login` 
-      : `${import.meta.env.VITE_BASE_URL}/api/v1/employer/login`;
+      const url =
+        userType === 'candidate'
+          ? `${import.meta.env.VITE_BASE_URL}/api/v1/candidates/login`
+          : `${import.meta.env.VITE_BASE_URL}/api/v1/employers/login`;
 
       const response = await fetch(url, {
         method: 'POST',
@@ -24,14 +25,17 @@ function LoginForm({ userType }) {
         body: JSON.stringify({ email, password }),
       });
 
-      if (response.status === 200) {
-        console.log("Login Successful");
+      if (response.ok) {
+        console.log('Login Successful');
         navigate('/');
+      } else {
+        const errorData = await response.json();
+        console.error(`Login failed: ${errorData.message || 'Unexpected error'}`);
       }
     } catch (err) {
-      console.log('Error:', err);
+      console.error(`Error: ${err.message}. Please check your network connection and try again.`);
     }
-  }
+  };
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
@@ -42,6 +46,8 @@ function LoginForm({ userType }) {
         <div className="relative">
           <input
             id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             type="email"
             required
             className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -58,7 +64,9 @@ function LoginForm({ userType }) {
         <div className="relative">
           <input
             id="password"
-            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            type={showPassword ? 'text' : 'password'}
             required
             className="w-full py-2 pl-10 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
             placeholder="Enter your password"
@@ -106,9 +114,7 @@ function LoginForm({ userType }) {
         </Link>
       </p>
     </form>
-  )
-
+  );
 }
 
-export default LoginForm
-
+export default LoginForm;
