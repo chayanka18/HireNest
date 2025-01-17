@@ -4,12 +4,13 @@ import { Link, useNavigate } from "react-router-dom";
 
 function LoginForm({ userType }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const email = event.target.email.value;
-    const password = event.target.password.value;
 
     try {
       const url =
@@ -28,9 +29,16 @@ function LoginForm({ userType }) {
       if (response.status === 200) {
         console.log("Login Successful");
         navigate("/");
+      } else {
+        const errorData = await response.json();
+        console.error(
+          `Login failed: ${errorData.message || "Unexpected error"}`
+        );
       }
     } catch (err) {
-      console.log("Error:", err);
+      console.error(
+        `Error: ${err.message}. Please check your network connection and try again.`
+      );
     }
   };
 
@@ -43,6 +51,8 @@ function LoginForm({ userType }) {
         <div className="relative">
           <input
             id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             type="email"
             required
             className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -59,6 +69,8 @@ function LoginForm({ userType }) {
         <div className="relative">
           <input
             id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             type={showPassword ? "text" : "password"}
             required
             className="w-full py-2 pl-10 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
