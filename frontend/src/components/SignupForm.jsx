@@ -12,6 +12,7 @@ function SignupForm({ userType }) {
     lastName: '',
     email: '',
     password: '',
+    confirmPassword: '',
     experienceLevel: '',
     jobType: '',
     phoneNumber: '',
@@ -39,8 +40,11 @@ function SignupForm({ userType }) {
     });
   };
 
+  const [loading, setLoading] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const url = userType === 'candidate' ? `${import.meta.env.VITE_BASE_URL}/api/v1/candidates/signup` : `${import.meta.env.VITE_BASE_URL}/api/v1/employers/signup`;
     
     let data;
@@ -61,7 +65,7 @@ function SignupForm({ userType }) {
         phone: formData.phoneNumber,
         email: formData.email,
         password: formData.password,
-        joinType:formData.joinType,
+        joinType: formData.joinType,
         website: formData.website
       };
     }
@@ -78,8 +82,9 @@ function SignupForm({ userType }) {
       navigate('/login');
     } catch (error) {
       console.error('Signup error:', error.response.data);
+    } finally {
+      setLoading(false);
     }
-    console.log(data)
   };
 
   const [showPassword, setShowPassword] = useState({
@@ -108,6 +113,7 @@ function SignupForm({ userType }) {
                 onChange={handleChange}
                 placeholder="John"
                 className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
               />
               <User className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
             </div>
@@ -138,6 +144,7 @@ function SignupForm({ userType }) {
               onChange={handleChange}
               placeholder="John Doe"
               className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
             />
             <User className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
           </div>
@@ -155,6 +162,7 @@ function SignupForm({ userType }) {
             onChange={handleChange}
             placeholder="Email Address"
             className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+            required
           />
           <Mail className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
         </div>
@@ -172,6 +180,7 @@ function SignupForm({ userType }) {
               onChange={handleChange}
               placeholder="Password"
               className="w-full py-2 pl-10 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
             />
             <Lock className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
             <button
@@ -194,6 +203,7 @@ function SignupForm({ userType }) {
               onChange={handleChange}
               placeholder="Confirm Password"
               className="w-full py-2 pl-10 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
             />
             <Lock className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
             <button
@@ -219,6 +229,7 @@ function SignupForm({ userType }) {
               onChange={handleChange}
               placeholder="Phone Number"
               className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
             />
             <Phone className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
           </div>
@@ -235,6 +246,7 @@ function SignupForm({ userType }) {
                 onChange={handleChange}
                 placeholder="Website"
                 className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
               />
               <User className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
             </div>
@@ -253,6 +265,7 @@ function SignupForm({ userType }) {
             value={userType === "candidate" ? formData.experienceLevel : formData.joinType}
             onChange={handleChange}
             className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+            required
           >
             {userType === "candidate" ? (
               <>
@@ -285,6 +298,7 @@ function SignupForm({ userType }) {
               value={formData.jobType}
               onChange={handleChange}
               className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
             >
               <option value="">Select job type</option>
               <option value="Full-time">Full Time</option>
@@ -308,6 +322,7 @@ function SignupForm({ userType }) {
                 accept="image/*"
                 onChange={handleFileChange}
                 className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
               />
               <Image className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
             </div>
@@ -320,9 +335,10 @@ function SignupForm({ userType }) {
               <input
                 type="file"
                 name="resume"
-                accept=".pdf,.doc,.docx"
+                accept=".pdf"
                 onChange={handleFileChange}
                 className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
               />
               <File className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
             </div>
@@ -333,9 +349,10 @@ function SignupForm({ userType }) {
 
       <button
         type="submit"
+        disabled={loading}
         className="w-full px-4 py-2 text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
       >
-        Sign Up
+         {loading ? <div className="spinner"></div> : 'Sign Up'}
       </button>
     </form>
   )
