@@ -207,7 +207,7 @@ function SignupForm({ userType }) {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className={`grid gap-6 ${userType !== "candidate" ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
         <div className="space-y-2">
           <label className="text-sm" htmlFor="phone">Phone Number</label>
           <div className="relative">
@@ -223,21 +223,23 @@ function SignupForm({ userType }) {
             <Phone className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
           </div>
         </div>
-        <div className="space-y-2">
-          <label className="text-sm" htmlFor="website">Website</label>
-          <div className="relative">
-            <input
-              id="website"
-              name="website"
-              type="text"
-              value={formData.website}
-              onChange={handleChange}
-              placeholder="Website"
-              className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-            <User className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
+        {userType !== "candidate" && (
+          <div className="space-y-2">
+            <label className="text-sm" htmlFor="website">Website</label>
+            <div className="relative">
+              <input
+                id="website"
+                name="website"
+                type="text"
+                value={formData.website}
+                onChange={handleChange}
+                placeholder="Website"
+                className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <User className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="space-y-2">
