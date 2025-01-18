@@ -8,9 +8,11 @@ function LoginForm({ userType }) {
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoading(true);
 
     try {
       const url =
@@ -36,9 +38,17 @@ function LoginForm({ userType }) {
         );
       }
     } catch (err) {
+      // <<<<<<< HEAD
+      //       console.error(
+      //         `Error: ${err.message}. Please check your network connection and try again.`
+      //       );
+      // =======
       console.error(
         `Error: ${err.message}. Please check your network connection and try again.`
       );
+    } finally {
+      setLoading(false);
+      // >>>>>>> upstream/main
     }
   };
 
@@ -92,7 +102,7 @@ function LoginForm({ userType }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="flex items-center">
+        {/* <div className="flex items-center">
           <input
             id="remember-me"
             type="checkbox"
@@ -104,22 +114,31 @@ function LoginForm({ userType }) {
           >
             Remember me
           </label>
-        </div>
+        </div> */}
         <div className="text-sm">
+          {/* <<<<<<< HEAD
           <a
             href="#"
             className="font-medium text-orange-500 hover:text-orange-600"
           >
             Forgot your password?
+======= */}
+          <a
+            href="#"
+            className="font-medium text-orange-500 hover:text-orange-600"
+          >
+            Forgot password?
+            {/* >>>>>>> upstream/main */}
           </a>
         </div>
       </div>
 
       <button
         type="submit"
+        disabled={loading}
         className="w-full px-4 py-2 text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
       >
-        Sign In
+        {loading ? <div className="spinner"></div> : "Log In"}
       </button>
 
       <p className="text-sm text-center text-gray-600">

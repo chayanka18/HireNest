@@ -3,26 +3,26 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const Candidate = require('../models/candidate.model');
+const { v2 : cloudinary } = require('cloudinary');
 const authMiddleware = require('../middleware/authMiddleware');
 const { addToBlacklist } = require('../utils/blacklist');
 
 const router = express.Router();
 
-// Multer configuration for file uploads and storage
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
+// Cloudinary configuration
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const upload = multer({ 
-    storage: storage, 
-    limits: { fileSize: 5 * 1024 * 1024 },
+// Multer configuration for file handling
+const storage = multer.diskStorage({});
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
     fileFilter: (req, file, cb) => {
-        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'application/pdf') {
+        if (['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype)) {
             cb(null, true);
         } else {
             cb(new Error('Invalid file type'), false);
@@ -30,77 +30,66 @@ const upload = multer({
     }
 }).fields([{ name: 'profilePhoto', maxCount: 1 }, { name: 'resume', maxCount: 1 }]);
 
+// Uploading files to Cloudinary
+const uploadToCloudinary = (filePath, folder) => {
+    return cloudinary.uploader.upload(filePath, { folder: folder })
+        .then(result => ({
+            url: result.secure_url,
+            public_id: result.public_id
+        }))
+        .catch(error => {
+            console.error('Error uploading to Cloudinary:', error);
+            throw error;
+        });
+};
+
+
 // SignUp route
 router.post('/signup', upload, async (req, res) => {
-    console.log(req.files);
-
-    const { firstName, lastName, email, password, experienceLevel, jobType, phoneNumber } = req.body;
-
-    // Extract file paths from req.files
-    const profilePhoto = req.files && req.files['profilePhoto'] ? req.files['profilePhoto'][0].path : null;
-    const resume = req.files && req.files['resume'] ? req.files['resume'][0].path : null;
-
-    if (!firstName) {
-        return res.status(400).json({ msg: 'First name is required' });
-    }
-    if (!lastName) {
-        return res.status(400).json({ msg: 'Last name is required' });
-    }
-    if (!email) {
-        return res.status(400).json({ msg: 'Email is required' });
-    }
-    if (!password) {
-        return res.status(400).json({ msg: 'Password is required' });
-    }
-    if (!experienceLevel) {
-        return res.status(400).json({ msg: 'Experience level is required' });
-    }
-    if (!jobType) {
-        return res.status(400).json({ msg: 'Job type is required' });
-    }
-    if (!phoneNumber) {
-        return res.status(400).json({ msg: 'Phone number is required' });
-    }
-    if (!profilePhoto) {
-        return res.status(400).json({ msg: 'Profile photo is required' });
-    }
-    if (!resume) {
-        return res.status(400).json({ msg: 'Resume is required' });
-    }
-
     try {
+        const { firstName, lastName, email, password, experienceLevel, jobType, phoneNumber } = req.body;
+
+        // Validate fields
+        if (!firstName || !lastName || !email || !password || !experienceLevel || !jobType || !phoneNumber) {
+            return res.status(400).json({ msg: 'All fields are required' });
+        }
+
+        // Validate file uploads
+        if (!req.files || !req.files['profilePhoto'] || !req.files['resume']) {
+            return res.status(400).json({ msg: 'Profile photo and resume are required' });
+        }
+
+        const profilePhotoFile = req.files['profilePhoto'][0].path;
+        const resumeFile = req.files['resume'][0].path;
+
+        // Upload files to Cloudinary
+        const profilePhotoUpload = await uploadToCloudinary(profilePhotoFile, 'uploads/profilePhotos');
+        const resumeUpload = await uploadToCloudinary(resumeFile, 'uploads/resumes');
+
+        // Check if candidate already exists
         let candidate = await Candidate.findOne({ email });
         if (candidate) {
             return res.status(400).json({ msg: 'Candidate already exists' });
         }
 
+        // Create new candidate
         candidate = new Candidate({
             fullName: { firstName, lastName },
             email,
-            password,
+            password: await bcrypt.hash(password, 10), // Hash password
             experienceLevel,
             jobType,
             phoneNumber,
-            profilePhoto,
-            resume
+            profilePhoto: profilePhotoUpload.url, // Cloudinary URL
+            resume: resumeUpload.url // Cloudinary URL
         });
-
-        const salt = await bcrypt.genSalt(10);
-        candidate.password = await bcrypt.hash(password, salt);
 
         await candidate.save();
 
-        const payload = {
-            user: {
-                id: candidate._id
-            }
-        };
-
+        // Generate JWT
+        const payload = { user: { id: candidate._id } };
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
-            if (err) {
-                console.error('Error generating JWT:', err);
-                throw err;
-            }
+            if (err) throw err;
 
             res.json({
                 token,
@@ -108,13 +97,13 @@ router.post('/signup', upload, async (req, res) => {
                     id: candidate._id,
                     fullName: candidate.fullName,
                     email: candidate.email,
-                    profilePhoto,
-                    resume
+                    profilePhoto: candidate.profilePhoto,
+                    resume: candidate.resume
                 }
             });
         });
     } catch (err) {
-        console.error(err.message);
+        console.error('Error:', err.message);
         res.status(500).json({ msg: 'Server error' });
     }
 });
